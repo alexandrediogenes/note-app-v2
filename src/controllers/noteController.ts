@@ -17,16 +17,47 @@ export const createNote = async (req: AuthRequest, res: Response) => {
 
 export const getNotes = async (req: AuthRequest, res: Response) => {
   try {
-    const notes = await Note.find({ userId: req.userId }).sort({
-      isPinned: -1,
-      createdAt: -1
-    });
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-    res.json(notes);
+    const { category, isPinned, q } = req.query;
+
+    const filter: any = {
+      userId: req.userId
+    };
+
+    if (category) {
+      filter.category = category;
+    }
+
+    if (isPinned !== undefined) {
+      filter.isPinned = isPinned === 'true';
+    }
+
+    if (q) {
+      filter.$text = { $search: q as string };
+    }
+
+    const total = await Note.countDocuments(filter);
+
+    const notes = await Note.find(filter)
+      .sort({ isPinned: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+      data: notes
+    });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao buscar notas' });
   }
 };
+
 
 export const updateNote = async (req: AuthRequest, res: Response) => {
   try {
