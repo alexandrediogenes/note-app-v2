@@ -1,53 +1,47 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import User from '../models/User';
-
-const generateToken = (userId: string) => {
-  return jwt.sign(
-    { userId },
-    process.env.JWT_SECRET as string,
-    { expiresIn: '7d' }
-  );
-};
+import { generateToken } from '../config/jwt';
 
 export const register = async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
 
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    res.status(400);
-    throw new Error('Usuário já existe');
-  }
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'Usuário já existe' });
+    }
 
-  const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password });
 
-  res.status(201).json({
-    success: true,
-    data: {
+    res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
-      token: generateToken(user._id.toString())
-    }
-  });
+      token: generateToken(user._id.toString()),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao registrar usuário' });
+  }
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
-  if (!user || !(await user.comparePassword(password))) {
-    res.status(401);
-    throw new Error('Credenciais inválidas');
-  }
+    const user = await User.findOne({ email });
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ message: 'Credenciais inválidas' });
+    }
 
-  res.json({
-    success: true,
-    data: {
+    res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
-      token: generateToken(user._id.toString())
-    }
-  });
+      token: generateToken(user._id.toString()),
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro no login' });
+  }
 };

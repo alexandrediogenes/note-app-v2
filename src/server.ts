@@ -10,6 +10,10 @@ import { notFound, errorHandler } from './middleware/errorMiddleware';
 
 dotenv.config();
 connectDB();
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET não definido no ambiente');
+}
+
 
 const app = express();
 
