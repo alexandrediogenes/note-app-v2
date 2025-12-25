@@ -2,42 +2,43 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
-
+import { apiLimiter } from './middleware/rateLimit';
 import { connectDB } from './config/database';
 import authRoutes from './routes/authRoutes';
 import noteRoutes from './routes/noteRoutes';
-
-import { apiLimiter } from './middleware/rateLimit';
-import { errorHandler, notFound } from './middleware/errorMiddleware';
+import { notFound, errorHandler } from './middleware/errorMiddleware';
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-// 🔐 Segurança e middlewares globais
+// Segurança e limites
 app.use(helmet());
 app.use(apiLimiter);
-app.use(cors());
+
+// CORS
+app.use(cors()); // permite que o frontend acesse a API
+// Se quiser restringir ao frontend:
+// app.use(cors({ origin: 'https://note-app-frontend.onrender.com' }));
+
+// Middleware para JSON
 app.use(express.json());
 
-// 📦 Rotas
+// Rotas
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
 
-// 🏠 Rota raiz
+// Rota raiz
 app.get('/', (_, res) => {
   res.send('API Note App rodando 🚀');
 });
 
-// ❌ Rota não encontrada
+// Middleware de erro
 app.use(notFound);
-
-// 🚨 Handler global de erros (sempre por último)
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => {
   console.log(`🔥 Servidor rodando na porta ${PORT}`);
 });
