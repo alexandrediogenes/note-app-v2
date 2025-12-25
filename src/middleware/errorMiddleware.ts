@@ -6,7 +6,7 @@ export const notFound = (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const errorHandler = (
-  err: Error,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction
@@ -15,6 +15,6 @@ export const errorHandler = (
 
   res.status(statusCode).json({
     success: false,
-    message: err.message
+    message: err.message || 'Erro interno do servidor'
   });
 };
